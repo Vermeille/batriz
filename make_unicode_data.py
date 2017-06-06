@@ -65,14 +65,15 @@ print(2**best_split)
 print(best_total_so_far / 0x110000)
 
 with open('src/str/unicode_tables.cpp', 'w') as f:
-    print('const int shift = {};'.format(best_split), file=f)
+    print('static const int combining_shift = {};'.format(best_split), file=f)
     print(
-        'const int combining_idxs[{}] = {{'.format(len(best_table[1])), file=f)
+        'static const int combining_idxs[{}] = {{'.format(len(best_table[1])),
+        file=f)
     for i in best_table[1]:
         print('    {},'.format(i), file=f)
     print('};', file=f)
     print(
-        'const int combining_data[{}][{}] = {{'.format(
+        'static const int combining_data[{}][{}] = {{'.format(
             len(best_table[0]), 2**best_split),
         file=f)
     for d in best_table[0]:
@@ -81,7 +82,7 @@ with open('src/str/unicode_tables.cpp', 'w') as f:
     print(
         '''
         bool is_combining(int cp) {
-            return combining_data[combining_idxs[cp >> shift]]
-                                 [cp & ((1 << (shift + 1)) - 1)];
+            return combining_data[combining_idxs[cp >> combining_shift]]
+                                 [cp & ((1 << (combining_shift + 1)) - 1)];
         }''',
         file=f)
