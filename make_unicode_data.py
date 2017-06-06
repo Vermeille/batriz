@@ -1,0 +1,87 @@
+#!/bin/env python3
+
+response = open('data/UnicodeData.txt')
+
+
+class UChar:
+
+    def __init__(self, l):
+        l = l.split(';')
+        self.ID = int(l[0], 16)
+        self.name = l[1]
+        self.category = l[2]
+        self.combining = int(l[3])
+        self.bidi = l[4]
+        self.decomp = l[5]
+        self.decimal = l[6]
+        self.digit = l[7]
+        self.numeric = l[8]
+        self.bidi_mirrored = l[9]
+        self.unicode_1_name = l[10]
+        self.ISO_comment = l[11]
+        self.uppercase = int(l[12], 16) - self.ID if l[12] else 0
+        self.lowercase = int(l[13], 16) - self.ID if l[13] else 0
+        self.titlecase = l[14]
+
+
+data = {}
+lines = response.read().split('\n')
+for l in lines:
+    l = l.split('#')[0].strip()
+    if not l:
+        continue
+    u = UChar(l)
+    data[u.ID] = u
+
+
+def compress_table(data, chunk_size):
+    ds = []
+    idxs = [0] * (0x110000 // chunk_size)
+    for i in range(0, 0x110000, chunk_size):
+        cur = ', '.join([(str(data[j].combining) if j in data else '0')
+                         for j in range(i, i + chunk_size)])
+        try:
+            idx = ds.index(cur)
+        except:
+            idx = len(ds)
+            ds.append(cur)
+        idxs.append(idx)
+    total = len(idxs) + chunk_size * len(ds)
+    return total, (ds, idxs)
+
+
+best_total_so_far = 0x110000
+print(best_total_so_far)
+best_split = 0
+best_table = None
+for i in range(1, 16):
+    total, tables = compress_table(data, 2**i)
+    print(2**i, total, len(tables[0]), len(tables[1]))
+    if total < best_total_so_far:
+        best_table = tables
+        best_split = i
+        best_total_so_far = total
+print(2**best_split)
+print(best_total_so_far / 0x110000)
+
+with open('src/str/unicode_tables.cpp', 'w') as f:
+    print('const int shift = {};'.format(best_split), file=f)
+    print(
+        'const int combining_idxs[{}] = {{'.format(len(best_table[1])), file=f)
+    for i in best_table[1]:
+        print('    {},'.format(i), file=f)
+    print('};', file=f)
+    print(
+        'const int combining_data[{}][{}] = {{'.format(
+            len(best_table[0]), 2**best_split),
+        file=f)
+    for d in best_table[0]:
+        print('    {{ {} }},'.format(d), file=f)
+    print('};', file=f)
+    print(
+        '''
+        bool is_combining(int cp) {
+            return combining_data[combining_idxs[cp >> shift]]
+                                 [cp & ((1 << (shift + 1)) - 1)];
+        }''',
+        file=f)
