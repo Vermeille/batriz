@@ -50,39 +50,51 @@ def compress_table(data, chunk_size):
     return total, (ds, idxs)
 
 
-best_total_so_far = 0x110000
-print(best_total_so_far)
-best_split = 0
-best_table = None
-for i in range(1, 16):
-    total, tables = compress_table(data, 2**i)
-    print(2**i, total, len(tables[0]), len(tables[1]))
-    if total < best_total_so_far:
-        best_table = tables
-        best_split = i
-        best_total_so_far = total
-print(2**best_split)
-print(best_total_so_far / 0x110000)
+def find_best_split(data):
+    best_total_so_far = 0x110000
+    print(best_total_so_far)
+    best_split = 0
+    best_table = None
+    for i in range(1, 16):
+        total, tables = compress_table(data, 2**i)
+        print("packet size: {}, total: {}, len(data): {}, len(indexs): {}".
+              format(2**i, total, len(tables[0]), len(tables[1])))
+        if total < best_total_so_far:
+            best_table = tables
+            best_split = i
+            best_total_so_far = total
+    print("best packet size: {}".format(2**best_split))
+    print("%d%% of total size" % int(best_total_so_far / 0x110000 * 100))
+    return best_split, best_table
 
-with open('src/str/unicode_tables.cpp', 'w') as f:
-    print('static const int combining_shift = {};'.format(best_split), file=f)
-    print(
-        'static const int combining_idxs[{}] = {{'.format(len(best_table[1])),
-        file=f)
-    for i in best_table[1]:
-        print('    {},'.format(i), file=f)
-    print('};', file=f)
-    print(
-        'static const int combining_data[{}][{}] = {{'.format(
-            len(best_table[0]), 2**best_split),
-        file=f)
-    for d in best_table[0]:
-        print('    {{ {} }},'.format(d), file=f)
-    print('};', file=f)
-    print(
-        '''
-        bool is_combining(int cp) {
-            return combining_data[combining_idxs[cp >> combining_shift]]
-                                 [cp & ((1 << (combining_shift + 1)) - 1)];
-        }''',
-        file=f)
+
+def print_table(table_name, best_split, best_table):
+    with open('src/str/%s_tables.cpp' % table_name, 'w') as f:
+        print(
+            'static const int {}_shift = {};'.format(table_name, best_split),
+            file=f)
+        print(
+            'static const int {}_idxs[{}] = {{'.format(table_name,
+                                                       len(best_table[1])),
+            file=f)
+        for i in best_table[1]:
+            print('    {},'.format(i), file=f)
+        print('};', file=f)
+        print(
+            'static const int {}_data[{}][{}] = {{'.format(
+                table_name, len(best_table[0]), 2**best_split),
+            file=f)
+        for d in best_table[0]:
+            print('    {{ {} }},'.format(d), file=f)
+        print('};', file=f)
+        print(
+            '''
+            bool read_{0}(int cp) {{
+                return {0}_data[{0}_idxs[cp >> {0}_shift]]
+                                     [cp & ((1 << ({0}_shift + 1)) - 1)];
+            }}'''.format(table_name),
+            file=f)
+
+
+best_split, best_table = find_best_split(data)
+print_table('combining', best_split, best_table)

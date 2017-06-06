@@ -23,7 +23,9 @@ static const std::string whitespace = " \t\n\r\f\v";
 static const std::string printable =
     digits + ascii_letters + punctuation + whitespace;
 
-#include "unicode_tables.cpp"
+#include "combining_tables.cpp"
+
+bool is_combining(int cp) { return read_combining(cp) != 0; }
 
 int countchars(const std::string& s) {
     auto cps = make_code_points(s);
