@@ -34,11 +34,11 @@ for l in lines:
     data[u.ID] = u
 
 
-def compress_table(data, chunk_size):
+def compress_table(data, chunk_size, key):
     ds = []
     idxs = [0] * (0x110000 // chunk_size)
     for i in range(0, 0x110000, chunk_size):
-        cur = ', '.join([(str(data[j].combining) if j in data else '0')
+        cur = ', '.join([(str(key(data[j])) if j in data else '0')
                          for j in range(i, i + chunk_size)])
         try:
             idx = ds.index(cur)
@@ -50,13 +50,13 @@ def compress_table(data, chunk_size):
     return total, (ds, idxs)
 
 
-def find_best_split(data):
+def find_best_split(data, key):
     best_total_so_far = 0x110000
     print(best_total_so_far)
     best_split = 0
     best_table = None
     for i in range(1, 16):
-        total, tables = compress_table(data, 2**i)
+        total, tables = compress_table(data, 2**i, key)
         print("packet size: {}, total: {}, len(data): {}, len(indexs): {}".
               format(2**i, total, len(tables[0]), len(tables[1])))
         if total < best_total_so_far:
@@ -96,5 +96,9 @@ def print_table(table_name, best_split, best_table):
             file=f)
 
 
-best_split, best_table = find_best_split(data)
+print('Generate combining tables...')
+best_split, best_table = find_best_split(data, key=lambda u: u.combining)
 print_table('combining', best_split, best_table)
+print('Generate uppercase tables...')
+best_split, best_table = find_best_split(data, key=lambda u: u.uppercase)
+print_table('upper', best_split, best_table)
