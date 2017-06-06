@@ -6,9 +6,8 @@
 namespace str {
 namespace impl {
 
-template <class StrIt>
 class code_point_iterator {
-    StrIt pos_;
+    std::string::const_iterator pos_;
 
     unsigned char to_uc(char x) const { return x; }
 
@@ -34,8 +33,7 @@ class code_point_iterator {
     using iterator_category = std::forward_iterator_tag;
 
     code_point_iterator() = default;
-    code_point_iterator(StrIt p) : pos_(p) {}
-
+    code_point_iterator(std::string::const_iterator p) : pos_(p) {}
     code_point_iterator(const code_point_iterator&) = default;
 
     code_point_iterator operator=(const code_point_iterator& it) {
@@ -60,53 +58,48 @@ class code_point_iterator {
     }
 
     bool operator==(code_point_iterator o) const { return pos_ == o.pos_; }
-
     bool operator!=(code_point_iterator o) const { return pos_ != o.pos_; }
 
     code_point_iterator operator++(int) {
         auto p = *this;
-        operator++();
+        ++pos_;
         return p;
     }
 };
 
 }  // namespace impl
 
-template <class Str>
-struct code_points {
-   private:
-    Str& s_;
-
-   public:
-    using iterator = impl::code_point_iterator<std::string::iterator>;
-    using const_iterator =
-        impl::code_point_iterator<std::string::const_iterator>;
-
-    code_points(Str& s) : s_(s) {}
-
-    const_iterator cbegin() const { return const_iterator(std::cbegin(s_)); }
-    const_iterator cend() const { return const_iterator(std::cend(s_)); }
-
-    iterator begin() { return iterator(std::begin(s_)); }
-    iterator end() { return iterator(std::end(s_)); }
-
-    int size() const { return std::distance(cbegin(), cend()); }
-};
-
-code_points<const std::string> make_code_points(const std::string& s) {
-    return code_points<const std::string>(s);
-}
-
-code_points<std::string> make_code_points(std::string& s) {
-    return code_points<std::string>(s);
-}
-
 }  // namespace str
 
 namespace std {
-template <class Str>
-struct iterator_traits<str::impl::code_point_iterator<Str>>
-    : public iterator_traits<Str> {
+template <>
+struct iterator_traits<str::impl::code_point_iterator> {
     using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::string::iterator::difference_type;
+    using value_type = std::string::iterator::value_type;
+    using pointer = std::string::iterator::pointer;
+    using reference = std::string::iterator::reference;
 };
 }
+
+namespace str {
+struct const_code_points {
+   private:
+    const std::string& s_;
+
+   public:
+    using const_iterator = impl::code_point_iterator;
+
+    const_code_points(const std::string& s) : s_(s) {}
+
+    const_iterator begin() const { return const_iterator(std::cbegin(s_)); }
+    const_iterator end() const { return const_iterator(std::cend(s_)); }
+
+    int size() const { return std::distance(begin(), end()); }
+};
+
+const_code_points make_code_points(const std::string& s) {
+    return const_code_points(s);
+}
+
+}  // namespace str

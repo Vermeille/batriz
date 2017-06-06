@@ -27,12 +27,41 @@ static const std::string printable =
 
 bool is_combining(int cp) { return read_combining(cp) != 0; }
 
+#include "upper_tables.cpp"
+
 int countchars(const std::string& s) {
     auto cps = make_code_points(s);
-    return std::accumulate(
-        cps.cbegin(), cps.cend(), 0, [](int count, int code) {
-            return count + (is_combining(code) ? 0 : 1);
-        });
+    return std::accumulate(cps.begin(), cps.end(), 0, [](int count, int code) {
+        return count + (is_combining(code) ? 0 : 1);
+    });
+}
+
+void append_code_point(std::string& s, int cp) {
+    if (cp < 0x80) {
+        s.push_back(cp);
+    } else if (cp < 0x800) {
+        s.push_back(0b1100'0000 | (cp >> 6));
+        s.push_back(0b1000'0000 | (cp & 0b0011'1111));
+    } else if (cp < 0x10000) {
+        s.push_back(0b1110'0000 | (cp >> 12));
+        s.push_back(0b1000'0000 | ((cp >> 6) & 0b0011'1111));
+        s.push_back(0b1000'0000 | (cp & 0b0011'1111));
+    } else if (cp < 0x110000) {
+        s.push_back(0b1111'0000 | (cp >> 18));
+        s.push_back(0b1000'0000 | ((cp >> 12) & 0b0011'1111));
+        s.push_back(0b1000'0000 | ((cp >> 6) & 0b0011'1111));
+        s.push_back(0b1000'0000 | (cp & 0b0011'1111));
+    } else {
+        throw std::runtime_error("invalid code_point");
+    }
+}
+
+std::string my_upper(const std::string& s) {
+    std::string res;
+    for (int cp : make_code_points(s)) {
+        append_code_point(res, read_upper(cp));
+    }
+    return res;
 }
 
 std::string capitalize(const std::string& text) {
