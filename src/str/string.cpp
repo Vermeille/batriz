@@ -59,7 +59,7 @@ void append_code_point(std::string& s, int cp) {
 std::string my_upper(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
-        append_code_point(res, read_upper(cp));
+        append_code_point(res, cp + read_upper(cp));
     }
     return res;
 }
@@ -271,5 +271,6 @@ int main() {
     assert((str::split("le caca est beau") ==
             std::vector<std::string>{"le", "caca", "est", "beau"}));
     assert(str::make_code_points("$¢€𐍈").size() == 4);
+    std::cout << str::my_upper("le caca e\u0301toile\u0301");
     return 0;
 }

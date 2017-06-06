@@ -89,7 +89,7 @@ def print_table(table_name, best_split, best_table):
         print('};', file=f)
         print(
             '''
-            bool read_{0}(int cp) {{
+            int read_{0}(int cp) {{
                 return {0}_data[{0}_idxs[cp >> {0}_shift]]
                                      [cp & ((1 << ({0}_shift + 1)) - 1)];
             }}'''.format(table_name),
