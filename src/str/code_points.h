@@ -65,6 +65,20 @@ class code_point_iterator {
         ++pos_;
         return p;
     }
+
+    std::string::const_iterator str_begin() const { return pos_; }
+    std::string::const_iterator str_end() const {
+        if ((*pos_ & 0b1000'0000) == 0) {
+            return pos_ + 1;
+        } else if ((*pos_ & 0b1110'0000) == 0b1100'0000) {
+            return pos_ + 2;
+        } else if ((*pos_ & 0b1111'0000) == 0b1110'0000) {
+            return pos_ + 3;
+        } else if ((*pos_ & 0b1111'1000) == 0b1111'0000) {
+            return pos_ + 4;
+        }
+        return pos_;
+    }
 };
 
 }  // namespace impl

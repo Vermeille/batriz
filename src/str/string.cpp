@@ -8,7 +8,11 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/locale.hpp>
 
-#include "code_points.h"
+#include "grapheme_iterator.h"
+
+int read_combining(int);
+int read_upper(int);
+int read_lower(int);
 
 namespace str {
 
@@ -23,18 +27,7 @@ static const std::string whitespace = " \t\n\r\f\v";
 static const std::string printable =
     digits + ascii_letters + punctuation + whitespace;
 
-#include "combining_tables.cpp"
-
 bool is_combining(int cp) { return read_combining(cp) != 0; }
-
-#include "upper_tables.cpp"
-
-int countchars(const std::string& s) {
-    auto cps = make_code_points(s);
-    return std::accumulate(cps.begin(), cps.end(), 0, [](int count, int code) {
-        return count + (is_combining(code) ? 0 : 1);
-    });
-}
 
 void append_code_point(std::string& s, int cp) {
     if (cp < 0x80) {
@@ -56,13 +49,23 @@ void append_code_point(std::string& s, int cp) {
     }
 }
 
-std::string my_upper(const std::string& s) {
+std::string upper(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
         append_code_point(res, cp + read_upper(cp));
     }
     return res;
 }
+
+std::string lower(const std::string& s) {
+    std::string res;
+    for (int cp : make_code_points(s)) {
+        append_code_point(res, cp + read_lower(cp));
+    }
+    return res;
+}
+
+int countchars(const std::string& s) { return make_graphemes(s).size(); }
 
 std::string capitalize(const std::string& text) {
     if (text.empty()) {
@@ -252,10 +255,13 @@ T split(const std::string& s, char c = ' ') {
 }  // namespace string
 
 int main() {
+    /*
     assert(str::capitalize("toto") == "Toto");
     assert(str::capitalize("çaça") == "Çaça");
     assert(str::capitalize("ßtoto") == "SStoto");
     assert(str::casefold("Éviscérer") == "éviscérer");
+    */
+    std::cout << str::upper("ßtoto") << "\n";
     assert(str::countchars("ßtoto") == 5);
     assert(str::center("e\u0301", 3) == " e\u0301 ");
     assert(str::center("e\u0301", 4) == " e\u0301  ");
@@ -271,6 +277,16 @@ int main() {
     assert((str::split("le caca est beau") ==
             std::vector<std::string>{"le", "caca", "est", "beau"}));
     assert(str::make_code_points("$¢€𐍈").size() == 4);
-    std::cout << str::my_upper("le caca e\u0301toile\u0301");
+    std::cout << str::upper("le caca e\u0301toile\u0301 σ") << "\n";
+    assert(str::lower(str::upper("le caca e\u0301toile\u0301 σ")) ==
+           "le caca e\u0301toile\u0301 σ");
+
+    std::string a = "aßtotolae\u0301e\u0301 \r\nu";
+    for (auto g : str::make_graphemes(a)) {
+        std::cout << "-"
+                  << std::string(g.first.str_begin(), g.second.str_begin())
+                  << "-\n";
+    }
+
     return 0;
 }
