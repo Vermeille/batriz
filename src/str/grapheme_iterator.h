@@ -40,17 +40,7 @@ class grapheme_iterator {
     bool emoji_;     // used for GB10
     int reg_indic_;  // For GB12/13
 
-    bool belongs_to_emoji_sequence(int cp) {
-        // helper for GB10
-        if (cp == GRAPHEME_CLUSTER_BREAK::E_Base ||
-            cp == GRAPHEME_CLUSTER_BREAK::E_Base_GAZ) {
-            return true;
-        } else if (cp == GRAPHEME_CLUSTER_BREAK::Extend) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    bool belongs_to_emoji_sequence(int cp);
 
    public:
     grapheme_iterator(const code_point_iterator& end)
@@ -193,6 +183,6 @@ struct graphemes {
     int size() const { return std::distance(begin(), end()); }
 };
 
-graphemes make_graphemes(const std::string& s) { return graphemes(s); }
+inline graphemes make_graphemes(const std::string& s) { return graphemes(s); }
 
 }  // namespace str

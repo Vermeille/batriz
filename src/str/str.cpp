@@ -1,3 +1,5 @@
+#include "str.h"
+
 #include <cctype>
 #include <codecvt>
 #include <iomanip>
@@ -6,7 +8,6 @@
 #include <string>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/locale.hpp>
 
 #include "grapheme_iterator.h"
 
@@ -16,18 +17,7 @@ int read_lower(int);
 
 namespace str {
 
-static const std::string ascii_lowercase = "abcdefghijklmopqrstuvwxyz";
-static const std::string ascii_uppercase = "ABCDEFGHIJKLMOPQRSTUVWXYZ";
-static const std::string ascii_letters = ascii_lowercase + ascii_uppercase;
-static const std::string digits = "0123456789";
-static const std::string hexdigits = "0123456789abcdefABCDEF";
-static const std::string octdigits = "01234567";
-static const std::string punctuation = R"(!"#$%&'()*+,-./:;<=>?@[]^_`{|}~)";
-static const std::string whitespace = " \t\n\r\f\v";
-static const std::string printable =
-    digits + ascii_letters + punctuation + whitespace;
-
-bool is_combining(int cp) { return read_combining(cp) != 0; }
+namespace impl {
 
 void append_code_point(std::string& s, int cp) {
     if (cp < 0x80) {
@@ -49,10 +39,22 @@ void append_code_point(std::string& s, int cp) {
     }
 }
 
+}  // namespace impl
+
+const std::string ascii_lowercase = "abcdefghijklmopqrstuvwxyz";
+const std::string ascii_uppercase = "ABCDEFGHIJKLMOPQRSTUVWXYZ";
+const std::string ascii_letters = ascii_lowercase + ascii_uppercase;
+const std::string digits = "0123456789";
+const std::string hexdigits = "0123456789abcdefABCDEF";
+const std::string octdigits = "01234567";
+const std::string punctuation = R"(!"#$%&'()*+,-./:;<=>?@[]^_`{|}~)";
+const std::string whitespace = " \t\n\r\f\v";
+const std::string printable = digits + ascii_letters + punctuation + whitespace;
+
 std::string upper(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
-        append_code_point(res, cp + read_upper(cp));
+        impl::append_code_point(res, cp + read_upper(cp));
     }
     return res;
 }
@@ -60,33 +62,12 @@ std::string upper(const std::string& s) {
 std::string lower(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
-        append_code_point(res, cp + read_lower(cp));
+        impl::append_code_point(res, cp + read_lower(cp));
     }
     return res;
 }
 
 int countchars(const std::string& s) { return make_graphemes(s).size(); }
-
-std::string capitalize(const std::string& text) {
-    if (text.empty()) {
-        return "";
-    }
-    using namespace boost::locale::boundary;
-    ssegment_index map(character, text.begin(), text.end());
-    std::string res;
-    res.reserve(text.size());
-    ssegment_index::iterator it = map.begin(), e = map.end();
-    res += boost::locale::to_upper(std::string(*it));
-    ++it;
-    for (; it != e; ++it) {
-        res += *it;
-    }
-    return res;
-}
-
-std::string casefold(const std::string& text) {
-    return boost::locale::fold_case(text);
-}
 
 int countcodepoints(const std::string& s) {
     return std::accumulate(s.begin(), s.end(), 0, [](int x, uint8_t c) {
@@ -94,9 +75,7 @@ int countcodepoints(const std::string& s) {
     });
 }
 
-std::string center(const std::string& s,
-                   int width,
-                   const std::string& fill = " ") {
+std::string center(const std::string& s, int width, const std::string& fill) {
     assert(countchars(fill) == 1);
     auto len = width - countchars(s);
     if (len <= 0) {
@@ -117,8 +96,8 @@ std::string center(const std::string& s,
 
 int count(const std::string& s,
           const std::string& sub,
-          int start = 0,
-          std::string::size_type end = -1) {
+          int start,
+          std::string::size_type end) {
     int count = 0;
     while (true) {
         auto pos = s.find(sub, start);
@@ -135,8 +114,8 @@ int count(const std::string& s,
 
 bool endswith(const std::string& s,
               const std::string& suffix,
-              int start = 0,
-              std::string::size_type end = -1) {
+              int start,
+              std::string::size_type end) {
     end = (end == std::string::npos) ? s.size() : end;
     if (suffix.size() > end - start) {
         return false;
@@ -145,7 +124,7 @@ bool endswith(const std::string& s,
         suffix.rbegin(), suffix.rend(), s.rbegin() + (s.size() - end));
 }
 
-std::string expandtabs(const std::string& s, int tabsize = 8) {
+std::string expandtabs(const std::string& s, int tabsize) {
     std::string res;
     res.reserve(s.size());
     std::string::size_type start = 0;
@@ -166,8 +145,8 @@ std::string expandtabs(const std::string& s, int tabsize = 8) {
 
 int find(const std::string& s,
          const std::string& sub,
-         int start = 0,
-         std::string::size_type end = -1) {
+         int start,
+         std::string::size_type end) {
     auto found = s.find(sub, start);
     if (found == std::string::npos) {
         return -1;
@@ -214,8 +193,8 @@ std::string format(const std::string& fmt, Ts... args) {
 
 int index(const std::string& s,
           const std::string& pattern,
-          int start = 0,
-          std::string::size_type end = -1) {
+          int start,
+          std::string::size_type end) {
     end = (end == std::string::npos) ? s.size() : end;
     auto pos = s.find(pattern, start);
     if (pos == std::string::npos || pos >= end) {
@@ -225,68 +204,4 @@ int index(const std::string& s,
     return pos;
 }
 
-#if 0
-bool isalnum(const std::string& s) {
-    if (s.empty()) {
-        return false;
-    }
-    return std::all_of(s.begin(), s.end(), [](char c) {
-            return isalnum(c);
-            });
-}
-#endif
-
-template <class T = std::vector<std::string>>
-T split(const std::string& s, char c = ' ') {
-    T ss;
-    int start = 0;
-    while (true) {
-        auto found = s.find(c, start);
-        if (found == std::string::npos) {
-            ss.emplace_back(s.substr(start));
-            return ss;
-        }
-        ss.emplace_back(s.substr(start, found - start));
-        start = found + 1;
-    }
-    return ss;
-}
-
 }  // namespace string
-
-int main() {
-    /*
-    assert(str::capitalize("toto") == "Toto");
-    assert(str::capitalize("çaça") == "Çaça");
-    assert(str::capitalize("ßtoto") == "SStoto");
-    assert(str::casefold("Éviscérer") == "éviscérer");
-    */
-    std::cout << str::upper("ßtoto") << "\n";
-    assert(str::countchars("ßtoto") == 5);
-    assert(str::center("e\u0301", 3) == " e\u0301 ");
-    assert(str::center("e\u0301", 4) == " e\u0301  ");
-    assert(str::center("+", 8) == "   +    ");
-    assert(str::center("-e\u0301e\u0301-", 8) == "  -e\u0301e\u0301-  ");
-    assert(!str::endswith("le caca", "cac"));
-    assert(str::endswith("le caca", "cac", 0, 6));
-    assert(str::expandtabs("01\t012\t0123\t01234") ==
-           "01      012     0123    01234");
-    assert(str::expandtabs("01\t012\t0123\t01234", 4) ==
-           "01  012 0123    01234");
-    assert(str::count("ddddcacacccaddd", "ca") == 3);
-    assert((str::split("le caca est beau") ==
-            std::vector<std::string>{"le", "caca", "est", "beau"}));
-    assert(str::make_code_points("$¢€𐍈").size() == 4);
-    std::cout << str::upper("le caca e\u0301toile\u0301 σ") << "\n";
-    assert(str::lower(str::upper("le caca e\u0301toile\u0301 σ")) ==
-           "le caca e\u0301toile\u0301 σ");
-
-    std::string a = "aßtotolae\u0301e\u0301 \r\nu";
-    for (auto g : str::make_graphemes(a)) {
-        std::cout << "-"
-                  << std::string(g.first.str_begin(), g.second.str_begin())
-                  << "-\n";
-    }
-
-    return 0;
-}

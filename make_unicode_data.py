@@ -6,13 +6,19 @@ GRAPHEME_CLUSTER_BREAK = [
     'Glue_After_Zwj', 'E_Base_GAZ', 'Any'
 ]
 
+GENERAL_CATEGORY = [
+    'Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Mn', 'Mc', 'Me', 'Nd', 'Nl', 'No', 'Pc',
+    'Pd', 'Ps', 'Pe', 'Pi', 'Pf', 'Po', 'Sm', 'Sc', 'Sk', 'So', 'Zs', 'Zl',
+    'Zp', 'Cc', 'Cf', 'Cs', 'Co', 'Cn'
+]
+
 
 class UChar:
 
     def __init__(self, l):
         self.ID = int(l[0], 16)
         self.name = l[1]
-        self.category = l[2]
+        self.category = GENERAL_CATEGORY.index(l[2])
         self.combining = int(l[3])
         self.bidi = l[4]
         self.decomp = l[5]
@@ -182,5 +188,9 @@ print_table('lower', best_split, best_table)
 print('Generate grapheme_cluster_break tables...')
 best_split, best_table = find_best_split(
     data, key=lambda u: u.grapheme_cluster_break)
-
+test(key=lambda u: u.grapheme_cluster_break)
 print_table('grapheme_cluster_break', best_split, best_table)
+print('Generate category tables...')
+best_split, best_table = find_best_split(data, key=lambda u: u.category)
+test(key=lambda u: u.category)
+print_table('category', best_split, best_table)
