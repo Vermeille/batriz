@@ -17,8 +17,6 @@ int read_lower(int);
 
 namespace str {
 
-namespace impl {
-
 void append_code_point(std::string& s, int cp) {
     if (cp < 0x80) {
         s.push_back(cp);
@@ -39,8 +37,6 @@ void append_code_point(std::string& s, int cp) {
     }
 }
 
-}  // namespace impl
-
 const std::string ascii_lowercase = "abcdefghijklmopqrstuvwxyz";
 const std::string ascii_uppercase = "ABCDEFGHIJKLMOPQRSTUVWXYZ";
 const std::string ascii_letters = ascii_lowercase + ascii_uppercase;
@@ -54,7 +50,7 @@ const std::string printable = digits + ascii_letters + punctuation + whitespace;
 std::string upper(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
-        impl::append_code_point(res, cp + read_upper(cp));
+        append_code_point(res, cp + read_upper(cp));
     }
     return res;
 }
@@ -62,7 +58,7 @@ std::string upper(const std::string& s) {
 std::string lower(const std::string& s) {
     std::string res;
     for (int cp : make_code_points(s)) {
-        impl::append_code_point(res, cp + read_lower(cp));
+        append_code_point(res, cp + read_lower(cp));
     }
     return res;
 }

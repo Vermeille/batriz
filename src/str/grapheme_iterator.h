@@ -50,11 +50,12 @@ class grapheme_iterator {
                       const code_point_iterator& end)
         : pos_({start, start}),
           end_(end),
-          emoji_(belongs_to_emoji_sequence(*pos_.first)),
+          emoji_(belongs_to_emoji_sequence(
+              read_grapheme_cluster_break(*pos_.first))),
           reg_indic_(0) {
         if (read_grapheme_cluster_break(*pos_.first) ==
             GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
-            reg_indic_ = 1;
+            reg_indic_ = 0;
         }
         ++*this;
     }
@@ -70,7 +71,8 @@ class grapheme_iterator {
                 return *this;
             }
             // helpers
-            emoji_ = emoji_ && belongs_to_emoji_sequence(*pos_.second);
+            emoji_ = belongs_to_emoji_sequence(prev_type) ||
+                     (emoji_ && (prev_type == GRAPHEME_CLUSTER_BREAK::Extend));
 
             if (read_grapheme_cluster_break(*pos_.second) ==
                 GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
@@ -96,7 +98,24 @@ class grapheme_iterator {
                        c2 == GRAPHEME_CLUSTER_BREAK::LF ||
                        c2 == GRAPHEME_CLUSTER_BREAK::Control) {
                 return *this;
-                // TODO: GB6,7,8
+                // GB6
+            } else if (prev_type == GRAPHEME_CLUSTER_BREAK::L &&
+                       (c2 == GRAPHEME_CLUSTER_BREAK::L ||
+                        c2 == GRAPHEME_CLUSTER_BREAK::V ||
+                        c2 == GRAPHEME_CLUSTER_BREAK::LV ||
+                        c2 == GRAPHEME_CLUSTER_BREAK::LVT)) {
+                goto next;
+                // GB7
+            } else if ((prev_type == GRAPHEME_CLUSTER_BREAK::LV ||
+                        prev_type == GRAPHEME_CLUSTER_BREAK::V) &&
+                       (c2 == GRAPHEME_CLUSTER_BREAK::V ||
+                        c2 == GRAPHEME_CLUSTER_BREAK::T)) {
+                goto next;
+                // GB8
+            } else if ((prev_type == GRAPHEME_CLUSTER_BREAK::LVT ||
+                        prev_type == GRAPHEME_CLUSTER_BREAK::T) &&
+                       c2 == GRAPHEME_CLUSTER_BREAK::T) {
+                goto next;
                 // GB9
             } else if (c2 == GRAPHEME_CLUSTER_BREAK::Extend ||
                        c2 == GRAPHEME_CLUSTER_BREAK::ZWJ) {
@@ -116,9 +135,8 @@ class grapheme_iterator {
                         c2 == GRAPHEME_CLUSTER_BREAK::E_Base_GAZ)) {
                 goto next;
                 // GB12 / 13
-            }
-            if (reg_indic_ && reg_indic_ % 2 == 1 &&
-                c2 == GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
+            } else if (reg_indic_ && reg_indic_ % 2 == 1 &&
+                       c2 == GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
                 goto next;
                 // GB999
             } else {

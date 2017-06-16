@@ -8,8 +8,6 @@ bool grapheme_iterator::belongs_to_emoji_sequence(int cp) {
     if (cp == GRAPHEME_CLUSTER_BREAK::E_Base ||
         cp == GRAPHEME_CLUSTER_BREAK::E_Base_GAZ) {
         return true;
-    } else if (cp == GRAPHEME_CLUSTER_BREAK::Extend) {
-        return true;
     } else {
         return false;
     }

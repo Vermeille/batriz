@@ -103,13 +103,13 @@ def compress_table(data, chunk_size, key, default='0'):
     return total, (ds, idxs)
 
 
-def find_best_split(data, key):
+def find_best_split(data, key, default='0'):
     best_total_so_far = 0x110000
     print(best_total_so_far)
     best_split = 0
     best_table = None
     for i in range(1, 16):
-        total, tables = compress_table(data, 2**i, key)
+        total, tables = compress_table(data, 2**i, key, default)
         print("packet size: {}, total: {}, len(data): {}, len(indexs): {}".
               format(2**i, total, len(2**i * tables[0]), len(tables[1])))
         if total < best_total_so_far:
@@ -187,7 +187,9 @@ test(key=lambda u: u.lowercase)
 print_table('lower', best_split, best_table)
 print('Generate grapheme_cluster_break tables...')
 best_split, best_table = find_best_split(
-    data, key=lambda u: u.grapheme_cluster_break)
+    data,
+    key=lambda u: u.grapheme_cluster_break,
+    default=str(GRAPHEME_CLUSTER_BREAK.index('Any')))
 test(key=lambda u: u.grapheme_cluster_break)
 print_table('grapheme_cluster_break', best_split, best_table)
 print('Generate category tables...')
