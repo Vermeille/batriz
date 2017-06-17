@@ -8,4 +8,5 @@ add_library(str
     combining_tables.cpp
     upper_tables.cpp
     lower_tables.cpp
+    grapheme_cluster_break_automaton.cpp
     grapheme_cluster_break_tables.cpp)

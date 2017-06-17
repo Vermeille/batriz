@@ -7,40 +7,16 @@
 
 int read_grapheme_cluster_break(int cp);
 
+#include "grapheme_cluster_break_automaton.h"
+
 namespace str {
 namespace impl {
-
-class GRAPHEME_CLUSTER_BREAK {
-   public:
-    enum {
-        CR,
-        LF,
-        Control,
-        Extend,
-        ZWJ,
-        Regional_Indicator,
-        Prepend,
-        SpacingMark,
-        L,
-        V,
-        T,
-        LV,
-        LVT,
-        E_Base,
-        E_Modifier,
-        Glue_After_Zwj,
-        E_Base_GAZ,
-        Any
-    };
-};
 
 class grapheme_iterator {
     std::pair<code_point_iterator, code_point_iterator> pos_;
     code_point_iterator end_;
-    bool emoji_;     // used for GB10
-    int reg_indic_;  // For GB12/13
 
-    bool belongs_to_emoji_sequence(int cp);
+    bool belongs_to_emoji_sequence(int);
 
    public:
     grapheme_iterator(const code_point_iterator& end)
@@ -48,103 +24,23 @@ class grapheme_iterator {
 
     grapheme_iterator(const code_point_iterator& start,
                       const code_point_iterator& end)
-        : pos_({start, start}),
-          end_(end),
-          emoji_(belongs_to_emoji_sequence(
-              read_grapheme_cluster_break(*pos_.first))),
-          reg_indic_(0) {
-        if (read_grapheme_cluster_break(*pos_.first) ==
-            GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
-            reg_indic_ = 0;
-        }
+        : pos_({start, start}), end_(end) {
         ++*this;
     }
 
     grapheme_iterator operator++() {
-        // http://www.unicode.org/reports/tr29/tr29-29.html#GB1
         pos_.first = pos_.second;
-        int prev_type = read_grapheme_cluster_break(*pos_.first);
+        STATE s = STATE_sot;
         while (true) {
-            //////////// TR 29 RULES ///////////////////////
-            // GB1 GB2
             if (pos_.second == end_) {
                 return *this;
             }
-            // helpers
-            emoji_ = belongs_to_emoji_sequence(prev_type) ||
-                     (emoji_ && (prev_type == GRAPHEME_CLUSTER_BREAK::Extend));
-
-            if (read_grapheme_cluster_break(*pos_.second) ==
-                GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
-                ++reg_indic_;
-            } else {
-                reg_indic_ = 0;
+            auto prop = read_grapheme_cluster_break(*pos_.second);
+            s = next_state(s, prop);
+            if (s == STATE_BREAK) {
+                return *this;
             }
-
             ++pos_.second;
-            int c2 = read_grapheme_cluster_break(*pos_.second);
-
-            // GB3
-            if (prev_type == GRAPHEME_CLUSTER_BREAK::CR &&
-                c2 == GRAPHEME_CLUSTER_BREAK::LF) {
-                goto next;
-                // GB4
-            } else if (prev_type == GRAPHEME_CLUSTER_BREAK::CR ||
-                       prev_type == GRAPHEME_CLUSTER_BREAK::LF ||
-                       prev_type == GRAPHEME_CLUSTER_BREAK::Control) {
-                return *this;
-                // GB5
-            } else if (c2 == GRAPHEME_CLUSTER_BREAK::CR ||
-                       c2 == GRAPHEME_CLUSTER_BREAK::LF ||
-                       c2 == GRAPHEME_CLUSTER_BREAK::Control) {
-                return *this;
-                // GB6
-            } else if (prev_type == GRAPHEME_CLUSTER_BREAK::L &&
-                       (c2 == GRAPHEME_CLUSTER_BREAK::L ||
-                        c2 == GRAPHEME_CLUSTER_BREAK::V ||
-                        c2 == GRAPHEME_CLUSTER_BREAK::LV ||
-                        c2 == GRAPHEME_CLUSTER_BREAK::LVT)) {
-                goto next;
-                // GB7
-            } else if ((prev_type == GRAPHEME_CLUSTER_BREAK::LV ||
-                        prev_type == GRAPHEME_CLUSTER_BREAK::V) &&
-                       (c2 == GRAPHEME_CLUSTER_BREAK::V ||
-                        c2 == GRAPHEME_CLUSTER_BREAK::T)) {
-                goto next;
-                // GB8
-            } else if ((prev_type == GRAPHEME_CLUSTER_BREAK::LVT ||
-                        prev_type == GRAPHEME_CLUSTER_BREAK::T) &&
-                       c2 == GRAPHEME_CLUSTER_BREAK::T) {
-                goto next;
-                // GB9
-            } else if (c2 == GRAPHEME_CLUSTER_BREAK::Extend ||
-                       c2 == GRAPHEME_CLUSTER_BREAK::ZWJ) {
-                goto next;
-                // GB9a
-            } else if (c2 == GRAPHEME_CLUSTER_BREAK::SpacingMark) {
-                goto next;
-                // GB9b
-            } else if (prev_type == GRAPHEME_CLUSTER_BREAK::Prepend) {
-                goto next;
-                // GB10
-            } else if (emoji_ && c2 == GRAPHEME_CLUSTER_BREAK::E_Modifier) {
-                goto next;
-                // GB11
-            } else if (prev_type == GRAPHEME_CLUSTER_BREAK::ZWJ &&
-                       (c2 == GRAPHEME_CLUSTER_BREAK::Glue_After_Zwj ||
-                        c2 == GRAPHEME_CLUSTER_BREAK::E_Base_GAZ)) {
-                goto next;
-                // GB12 / 13
-            } else if (reg_indic_ && reg_indic_ % 2 == 1 &&
-                       c2 == GRAPHEME_CLUSTER_BREAK::Regional_Indicator) {
-                goto next;
-                // GB999
-            } else {
-                return *this;
-            }
-
-        next:
-            prev_type = c2;
         }
     }
 
