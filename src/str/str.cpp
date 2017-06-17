@@ -1,5 +1,6 @@
 #include "str.h"
 
+#include <algorithm>
 #include <cctype>
 #include <codecvt>
 #include <iomanip>
