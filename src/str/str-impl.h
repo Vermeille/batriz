@@ -3,7 +3,7 @@
 
 namespace str {
 
-template <class T = std::vector<std::string>>
+template <class T>
 T split(const std::string& s, char c) {
     T ss;
     int start = 0;
