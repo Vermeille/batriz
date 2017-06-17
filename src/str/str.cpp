@@ -1,10 +1,10 @@
 #include "str.h"
 
-#include <algorithm>
 #include <cctype>
 #include <codecvt>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 
