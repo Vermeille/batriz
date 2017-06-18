@@ -22,4 +22,4 @@ compiler:
 install:
     - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 
-script: mkdir b && cd b && cmake .. && make && ./tests/str_tests && ./tests/grapheme_break ../data/GraphemeBreakTest.txt
+script: mkdir b && cd b && cmake .. && make && (./tests/str_tests; ./tests/grapheme_break ../data/GraphemeBreakTest.txt; ./tests/int_tests)
