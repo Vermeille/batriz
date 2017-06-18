@@ -18,6 +18,7 @@ T next_power_of_2(T x) {
     return x;
 }
 
+// https://docs.python.org/3/library/stdtypes.html#int.bit_length
 template <class T>
 int bit_length(T x) {
     if (x < 0) {
@@ -54,6 +55,7 @@ struct OverflowError : public std::exception {};
 
 enum class ByteOrder { Big, Little };
 
+// https://docs.python.org/3/library/stdtypes.html#int.to_bytes
 template <class R = std::string, class T>
 R to_bytes(T x, int len, ByteOrder order, bool sign = false) {
     int min_bytes = (bit_length(x) + 7) / 8;
@@ -81,6 +83,7 @@ R to_bytes(T x, int len, ByteOrder order, bool sign = false) {
     assert(false);
 }
 
+// https://docs.python.org/3/library/stdtypes.html#int.from_bytes
 template <class R = int, class T>
 R from_bytes(const T& x, ByteOrder order, bool sign = false) {
     R ret = sign ? -1 : 0;
