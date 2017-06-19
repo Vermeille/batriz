@@ -51,6 +51,11 @@ int bit_length(T x) {
     return len;
 }
 
+template <class T>
+int leading_zeros(T x) {
+    return bit_length(x & -x) - 1;
+}
+
 struct OverflowError : public std::exception {};
 
 enum class ByteOrder { Big, Little };
