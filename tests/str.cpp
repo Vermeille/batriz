@@ -31,5 +31,11 @@ int main() {
                   << "-\n";
     }
 
+    while (std::cin) {
+        std::string s;
+        std::cin >> s;
+        std::cout << str::capitalize(s) << "\n";
+    }
+
     return 0;
 }

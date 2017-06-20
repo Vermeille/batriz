@@ -201,4 +201,12 @@ int index(const std::string& s,
     return pos;
 }
 
+std::string capitalize(const std::string& s) {
+    std::string res;
+    auto first = make_graphemes(s).begin();
+    res = upper(std::string(first.str_begin(), first.str_end()));
+    res.append(first.str_end(), s.end());
+    return res;
+}
+
 }  // namespace string

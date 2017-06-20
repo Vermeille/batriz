@@ -60,6 +60,14 @@ class grapheme_iterator {
     std::pair<code_point_iterator, code_point_iterator> operator*() const {
         return pos_;
     }
+
+    std::string::const_iterator str_begin() const {
+        return pos_.first.str_begin();
+    }
+
+    std::string::const_iterator str_end() const {
+        return pos_.second.str_begin();
+    }
 };
 
 }  // namespace impl
