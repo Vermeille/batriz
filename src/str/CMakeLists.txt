@@ -6,6 +6,7 @@ add_library(str
     grapheme_iterator.h
     grapheme_iterator.cpp
     combining_tables.cpp
+    casefold_tables.cpp
     upper_tables.cpp
     lower_tables.cpp
     grapheme_cluster_break_automaton.cpp

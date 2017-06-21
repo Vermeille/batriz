@@ -22,7 +22,7 @@ extern const std::string printable;
 std::string capitalize(const std::string& s);
 
 // https://docs.python.org/3/library/stdtypes.html#str.casefold
-// TODO
+std::string casefold(const std::string& s);
 
 // https://docs.python.org/3/library/stdtypes.html#str.center
 std::string center(const std::string& s,

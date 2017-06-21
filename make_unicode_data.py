@@ -32,6 +32,7 @@ class UChar:
         self.lowercase = int(l[13], 16) - self.ID if l[13] else 0
         self.titlecase = l[14]
         self.grapheme_cluster_break = GRAPHEME_CLUSTER_BREAK.index('Any')
+        self.casefold = 0
 
 
 def read_unicode_data():
@@ -84,6 +85,29 @@ def read_break_prop(data):
             else:
                 data[i].grapheme_cluster_break = GRAPHEME_CLUSTER_BREAK.index(
                     prop)
+    return data
+
+
+def read_case_fold(data):
+    response = open('data/CaseFolding.txt')
+
+    lines = response.read().split('\n')
+    for l in lines:
+        l = l.split('#')[0].strip()
+        if not l:
+            continue
+
+        print(l)
+        c, ty, prop = [x.strip() for x in l.split(";")[:-1]]
+
+        if ty not in ['C', 'S']:
+            continue
+
+        i = int(c, 16)
+        if not i in data:
+            pass  #print(hex(i) + " absent")
+        else:
+            data[i].casefold = int(prop, 16) - i
     return data
 
 
@@ -154,6 +178,7 @@ import sys
 
 data = read_unicode_data()
 data = read_break_prop(data)
+data = read_case_fold(data)
 
 
 def test(key):
@@ -177,14 +202,17 @@ print('Generate combining tables...')
 best_split, best_table = find_best_split(data, key=lambda u: u.combining)
 test(key=lambda u: u.combining)
 print_table('combining', best_split, best_table)
+
 print('Generate uppercase tables...')
 best_split, best_table = find_best_split(data, key=lambda u: u.uppercase)
 test(key=lambda u: u.uppercase)
 print_table('upper', best_split, best_table)
+
 print('Generate lowercase tables...')
 best_split, best_table = find_best_split(data, key=lambda u: u.lowercase)
 test(key=lambda u: u.lowercase)
 print_table('lower', best_split, best_table)
+
 print('Generate grapheme_cluster_break tables...')
 best_split, best_table = find_best_split(
     data,
@@ -192,7 +220,13 @@ best_split, best_table = find_best_split(
     default=str(GRAPHEME_CLUSTER_BREAK.index('Any')))
 test(key=lambda u: u.grapheme_cluster_break)
 print_table('grapheme_cluster_break', best_split, best_table)
+
 print('Generate category tables...')
 best_split, best_table = find_best_split(data, key=lambda u: u.category)
 test(key=lambda u: u.category)
 print_table('category', best_split, best_table)
+
+print('Generate casefold tables...')
+best_split, best_table = find_best_split(data, key=lambda u: u.casefold)
+test(key=lambda u: u.casefold)
+print_table('casefold', best_split, best_table)

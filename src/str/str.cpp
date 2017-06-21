@@ -15,6 +15,7 @@
 int read_combining(int);
 int read_upper(int);
 int read_lower(int);
+int read_casefold(int);
 
 namespace str {
 
@@ -206,6 +207,14 @@ std::string capitalize(const std::string& s) {
     auto first = make_graphemes(s).begin();
     res = upper(std::string(first.str_begin(), first.str_end()));
     res.append(first.str_end(), s.end());
+    return res;
+}
+
+std::string casefold(const std::string& s) {
+    std::string res;
+    for (int cp : make_code_points(s)) {
+        append_code_point(res, cp + read_casefold(cp));
+    }
     return res;
 }
 
