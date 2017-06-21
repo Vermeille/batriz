@@ -1,3 +1,4 @@
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,22 @@ T split(const std::string& s, char c) {
         start = found + 1;
     }
     return ss;
+}
+
+template <class Ts>
+std::string join(const std::string& joiner, Ts xs) {
+    if (xs.empty()) {
+        return "";
+    }
+    auto it = std::begin(xs);
+    std::ostringstream oss;
+    oss << *it;
+    ++it;
+    while (it != std::end(xs)) {
+        oss << joiner << *it;
+        ++it;
+    }
+    return oss.str();
 }
 
 }  // namespace str

@@ -99,7 +99,8 @@ int index(const std::string& s,
 // TODO
 
 // https://docs.python.org/3/library/stdtypes.html#str.join
-// TODO
+template <class Ts>
+std::string join(const std::string& joiner, Ts xs);
 
 // https://docs.python.org/3/library/stdtypes.html#str.ljust
 // TODO
@@ -163,7 +164,7 @@ T split(const std::string& s, char c = ' ');
 std::string upper(const std::string& s);
 
 // https://docs.python.org/3/library/stdtypes.html#str.zfill
-// TODO
+std::string zfill(const std::string& s, int width);
 
 // ********* PYTHON GLUE **********
 bool in(const std::string& c, const std::string& s);

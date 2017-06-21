@@ -23,19 +23,34 @@ int main() {
     assert(str::upper("le caca e\u0301toile\u0301 σ") == "LE CACA ÉTOILÉ Σ");
     assert(str::lower(str::upper("le caca e\u0301toile\u0301 σ")) ==
            "le caca e\u0301toile\u0301 σ");
+    assert(str::zfill("42", 5) == "00042");
+    assert(str::zfill("+42", 5) == "+0042");
+    assert(str::zfill("-42", 5) == "-0042");
+    assert(str::join(", ", std::vector<int>({1})) == "1");
+    assert(str::join(", ", std::vector<int>({1, 2, 3})) == "1, 2, 3");
 
     std::string a = "aßtotolae\u0301e\u0301 \r\nu";
-    for (auto g : str::make_graphemes(a)) {
-        std::cout << "-"
-                  << std::string(g.first.str_begin(), g.second.str_begin())
-                  << "-\n";
-    }
-
-    while (std::cin) {
-        std::string s;
-        std::cin >> s;
-        std::cout << str::capitalize(s) << "\n";
-    }
+    auto graphemes = str::make_graphemes(a);
+    std::vector<std::string> parsed({"a",
+                                     "ß",
+                                     "t",
+                                     "o",
+                                     "t",
+                                     "o",
+                                     "l",
+                                     "a",
+                                     "e\u0301",
+                                     "e\u0301",
+                                     " ",
+                                     "\r\n",
+                                     "u"});
+    assert(std::equal(graphemes.begin(),
+                      graphemes.end(),
+                      parsed.begin(),
+                      [](auto cp, auto ref) {
+                          return std::string(cp.first.str_begin(),
+                                             cp.second.str_begin()) == ref;
+                      }));
 
     return 0;
 }

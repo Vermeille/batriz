@@ -218,4 +218,23 @@ std::string casefold(const std::string& s) {
     return res;
 }
 
+std::string zfill(const std::string& s, int width) {
+    int sz = countchars(s);
+    if (sz >= width) {
+        return s;
+    }
+    width -= sz;
+    std::string res(width + s.size(), '0');
+    if (s[0] == '-') {
+        res[0] = '-';
+        std::copy(s.begin() + 1, s.end(), res.begin() + width + 1);
+    } else if (s[0] == '+') {
+        res[0] = '+';
+        std::copy(s.begin() + 1, s.end(), res.begin() + width + 1);
+    } else {
+        std::copy(s.begin(), s.end(), res.begin() + width);
+    }
+    return res;
+}
+
 }  // namespace string
